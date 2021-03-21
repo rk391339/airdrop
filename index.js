@@ -17,10 +17,21 @@ const SLPABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"
 const fetchAddresses = async (provider, blockStartNumber, path) => {
     const factory = new ethers.Contract(factoryAddress, factoryABI, provider)
     const pairLength = await factory.allPairsLength()
-    const currentBlockNumber = await provider.getBlockNumber()
+    let currentBlockNumber = await provider.getBlockNumber()
     let completeMintArray = []
     let completeSwapArray = []
-    for(var i = 0; i<pairLength; i+=1) {
+    let i = 0
+    let temp_path = "temp-" + path
+
+    if (fs.existsSync(temp_path)) {
+        let tempObj = JSON.parse(fs.readFileSync(temp_path, 'utf8'))
+        currentBlockNumber = tempObj.blockNumber
+        i = tempObj.i
+        completeMintArray = tempObj.completeMintArray
+        completeSwapArray = tempObj.completeSwapArray
+    }
+    
+    for(;i<pairLength; i+=1) {
         const pairAddress = await factory.allPairs(i)
         const slpPair = new ethers.Contract(pairAddress, SLPABI, provider)
         for(var j = blockStartNumber; j < currentBlockNumber; j+=5000) {
@@ -30,26 +41,31 @@ const fetchAddresses = async (provider, blockStartNumber, path) => {
             completeMintArray.push(...mintArray)
             completeSwapArray.push(...swapArray)
         }
+        let temp = {}
+        temp.completeMintArray = completeMintArray
+        temp.completeSwapArray = completeSwapArray
+        temp.i = i+1
+        temp.blockNumber = currentBlockNumber
+        fs.writeFileSync(temp_path, JSON.stringify(temp, null, 4))
     }
+    
     let mintOriginArray = []
-    for(var i = 0; i < completeMintArray.length; i++) {
-        if(completeMintArray[i].args.from == ZERO_ADDRESS && completeMintArray[i].args.to != ZERO_ADDRESS) {
-            mintOriginArray.push(completeMintArray[i].args.to)
+    for(let k = 0; k < completeMintArray.length; k++) {
+        if(completeMintArray[k].args[0] == ZERO_ADDRESS && completeMintArray[k].args[1] != ZERO_ADDRESS) {
+            mintOriginArray.push(completeMintArray[k].args[1])
         }
     }
     let uniqueMintOrigins = [...new Set(mintOriginArray)];
     let swapDestinationArray = []
-    for(var i = 0; i < completeSwapArray.length; i++) {swapDestinationArray.push(completeSwapArray[i].args.to)}
+    for(let k = 0; k < completeSwapArray.length; k++) {swapDestinationArray.push(completeSwapArray[k].args[5])}
     let uniqueSwapDestination = [...new Set(swapDestinationArray)];
     let addresses = {}
     addresses.cutOffBlock = currentBlockNumber
     addresses.minters = uniqueMintOrigins
     addresses.swappers = uniqueSwapDestination
-    console.log(addresses)
-    fs.writeFileSync(path, JSON.stringify(addresses))
+    fs.writeFileSync(path, JSON.stringify(addresses, null, 4))
 }
 
-fetchAddresses(bscProvider, 5205069, "bsc.json")
+//fetchAddresses(bscProvider, 5205069, "bsc.json")
 
-//fetchAddresses(fantomProvider, 2457879, "fantom.json")
-
+fetchAddresses(fantomProvider, 2457879, "fantom.json")
