@@ -62,10 +62,13 @@ const fetchAddresses = async (provider, blockStartNumber, path) => {
     let addresses = {}
     addresses.cutOffBlock = currentBlockNumber
     addresses.minters = uniqueMintOrigins
+    addresses.minterNumber = uniqueMintOrigins.length
     addresses.swappers = uniqueSwapDestination
+    addresses.swapperNumber = uniqueSwapDestination.length
+    addresses.uniqueNumber = [...new Set([...uniqueMintOrigins, ...uniqueSwapDestination])].length
     fs.writeFileSync(path, JSON.stringify(addresses, null, 4))
 }
 
-//fetchAddresses(bscProvider, 5205069, "bsc.json")
+fetchAddresses(bscProvider, 5205069, "bsc.json")
 
 fetchAddresses(fantomProvider, 2457879, "fantom.json")
