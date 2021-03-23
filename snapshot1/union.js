@@ -15,4 +15,4 @@ addresses.binancePeople = bscUniqueArray.length
 addresses.fantomPeople = fantomUniqueArray.length
 addresses.apePeople = fantomUniqueArray.filter(element => bscUniqueArray.includes(element)).length
 
-fs.writeFileSync("union.json", JSON.stringify(addresses, null, 4))
+fs.writeFileSync("snapshot1.json", JSON.stringify(addresses, null, 4))
